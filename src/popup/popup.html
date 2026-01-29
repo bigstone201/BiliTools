@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- 顶部标题栏 -->
+<header>
+  <div class="logo-area">
+    <span class="logo-icon">🚀</span>
+    <h1>倍速管理</h1>
+  </div>
+</header>
+
+<main>
+  <!-- 1. 快捷添加区 -->
+  <div class="section-title">快捷添加</div>
+  <div class="quick-tags" id="quickAddContainer">
+    <!-- JS 会在这里生成 2.5x, 3.0x 等按钮 -->
+  </div>
+
+  <!-- 2. 自定义输入区 -->
+  <div class="input-group">
+    <input type="number" id="speedInput" step="0.1" placeholder="自定义 (如 4.0)">
+    <button id="addBtn">添加</button>
+  </div>
+
+  <!-- 3. 当前列表区 -->
+  <div class="section-title">
+    当前列表 <span class="subtitle">(点击 × 删除)</span>
+  </div>
+  <div class="speed-list-container">
+    <div class="speed-list" id="speedList">
+      <!-- JS 动态生成 -->
+    </div>
+  </div>
+</main>
+
+<!-- 底部操作栏 -->
+<footer>
+  <div class="btn-group">
+    <button id="resetBtn" class="secondary-btn">恢复默认</button>
+    <button id="saveBtn" class="primary-btn">保存并应用</button>
+  </div>
+  <div id="status"></div>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>
