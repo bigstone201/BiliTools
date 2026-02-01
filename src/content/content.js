@@ -43,9 +43,7 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-/**
- * 【核心逻辑】应用倍数 + 音调控制 (花栗鼠模式)
- */
+// 应用倍数 + 音调控制 (花栗鼠模式)
 function applySpeed(rate) {
   const video = document.querySelector('video');
   if (!video) return;
@@ -74,9 +72,9 @@ function applySpeed(rate) {
   video.playbackRate = rate;
 }
 
-/**
- * 【防篡改】防止B站重置倍数
- */
+
+// 【防篡改】防止重置倍数
+
 function setupAntiReset(video) {
   if (video.hasAttribute('data-pro-speed-guardian')) return;
 

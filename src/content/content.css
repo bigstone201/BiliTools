@@ -6,15 +6,11 @@
     overflow-y: auto !important;   /* 允许垂直滚动 */
     width: 70px !important;        /* 稍微加宽，给滚动条留位置 */
 
-    /*
-       注意：绝对不要加 display: block !important;
-       否则菜单会一直显示无法消失
-    */
 }
 
 /* 2. 滚动条整体设置 */
 .bpx-player-ctrl-playbackrate-menu::-webkit-scrollbar {
-    width: 4px; /* 设得更细一点，视觉更精致 */
+    width: 4px;
 }
 
 /* 3. 滚动槽 (轨道) - 永远透明 */
@@ -22,7 +18,7 @@
     background: transparent;
 }
 
-/* 4. 滚动滑块 (那个动的小条) - 默认透明 (看起来就是隐藏) */
+/* 4. 滚动滑块 - 默认透明 */
 .bpx-player-ctrl-playbackrate-menu::-webkit-scrollbar-thumb {
     background: transparent;
     border-radius: 4px;
