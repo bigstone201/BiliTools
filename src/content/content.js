@@ -2,57 +2,69 @@
 
 const DEFAULT_RATES = [2.0, 1.5, 1.25, 1.0, 0.75, 0.5];
 let hoverListenerAttached = false;
-let currentTargetRate = null; // 当前锁定的目标倍数
+let currentTargetRate = null; // 用户在菜单选中的基础倍数
 
-// 全局设置 (默认值)
+// 状态标记
+let isLongPressing = false; // 是否正在长按右键
+let hoverListenerBound = false; // 防止重复绑定键盘事件
+
+// 全局设置
 let globalSettings = {
-  enableChipmunk: true
+  enableChipmunk: true,
+  longPressSpeed: 3.0 // 默认 3.0
 };
 
 function init() {
-  // 同时读取倍数和设置
   chrome.storage.sync.get(['customSpeeds', 'settings'], (result) => {
     let userRates = result.customSpeeds || DEFAULT_RATES;
     if (!userRates.includes(1.0)) userRates.push(1.0);
 
-    // 加载用户设置
     if (result.settings) {
       globalSettings = { ...globalSettings, ...result.settings };
     }
 
-    // 延迟执行以确保 Video 元素存在
     setTimeout(() => {
       const v = document.querySelector('video');
-      if (v) currentTargetRate = v.playbackRate;
+      if (v) {
+        currentTargetRate = v.playbackRate;
+        setupKeyboardListener(); // 初始化键盘监听
+      }
       observePlayer(userRates);
     }, 500);
   });
 }
 
-// 实时监听配置变化 (比如用户在Popup里开关了花栗鼠模式)
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.settings) {
     globalSettings = { ...globalSettings, ...changes.settings.newValue };
-    // 如果当前正在播放，立即重新应用倍数以刷新音调设置
-    if (currentTargetRate) applySpeed(currentTargetRate);
+    // 如果当前正在长按，实时更新长按速度
+    if (isLongPressing) {
+      applySpeed(globalSettings.longPressSpeed, true);
+    }
   }
-  // 倍数列表变化逻辑在下方 handle customSpeeds
   if (changes.customSpeeds) {
     const menu = document.querySelector('.bpx-player-ctrl-playbackrate-menu');
     if (menu) menu.removeAttribute('data-pro-speed-injected');
   }
 });
 
-// 应用倍数 + 音调控制 (花栗鼠模式)
-function applySpeed(rate) {
+/**
+ * 应用倍数
+ * @param {number} rate 目标倍数
+ * @param {boolean} isTemporary 是否为临时倍数（如长按触发），如果是临时，不更新全局currentTargetRate
+ */
+function applySpeed(rate, isTemporary = false) {
   const video = document.querySelector('video');
   if (!video) return;
 
-  currentTargetRate = rate;
-  const CHIPMUNK_THRESHOLD = 7.0; // 开启变调的阈值
+  // 如果不是临时变送（长按），则更新“标准答案”
+  if (!isTemporary) {
+    currentTargetRate = rate;
+  }
 
+  // --- 花栗鼠音调逻辑 ---
+  const CHIPMUNK_THRESHOLD = 7.0;
   if (globalSettings.enableChipmunk) {
-    // 开启模式：超过阈值则关闭 Pitch Preservation (变声但流畅)
     if (rate >= CHIPMUNK_THRESHOLD) {
       video.preservesPitch = false;
       video.mozPreservesPitch = false;
@@ -63,7 +75,6 @@ function applySpeed(rate) {
       video.webkitPreservesPitch = true;
     }
   } else {
-    // 关闭模式：始终保持原声
     video.preservesPitch = true;
     video.mozPreservesPitch = true;
     video.webkitPreservesPitch = true;
@@ -72,15 +83,19 @@ function applySpeed(rate) {
   video.playbackRate = rate;
 }
 
-
-// 【防篡改】防止重置倍数
-
+/**
+ * 防篡改逻辑
+ */
 function setupAntiReset(video) {
   if (video.hasAttribute('data-pro-speed-guardian')) return;
 
   video.addEventListener('ratechange', (e) => {
     if (currentTargetRate === null) return;
-    // 允许 0.1 的浮动误差
+
+    // 如果正在长按中，B站代码或我们也正在修改倍数，这时候不要触发重置
+    if (isLongPressing) return;
+
+    // 只有当非长按状态下，速度变了，才强制恢复
     if (Math.abs(video.playbackRate - currentTargetRate) > 0.1) {
       applySpeed(currentTargetRate);
     }
@@ -90,32 +105,67 @@ function setupAntiReset(video) {
 }
 
 /**
- * 【UI交互】幽灵显形滚动 (瞬间定位到当前倍数)
+ * 【新增】键盘长按监听
+ * 完美复刻 B站 原生体验：短按快进，长按加速
  */
+function setupKeyboardListener() {
+  if (hoverListenerBound) return;
+
+  // 监听按键按下
+  document.addEventListener('keydown', (e) => {
+    // 只处理右箭头，且必须聚焦在 body 或 video 上（防止在输入框打字时触发）
+    if (e.key === 'ArrowRight' &&
+        (document.activeElement === document.body || document.activeElement.tagName === 'VIDEO')) {
+
+      // e.repeat 为 true 表示按键被一直按着
+      if (e.repeat) {
+        if (!isLongPressing) {
+          isLongPressing = true;
+          // 显示自定义的长按倍数
+          applySpeed(globalSettings.longPressSpeed, true);
+          showToast(`🚀 ${globalSettings.longPressSpeed}x`);
+        }
+      }
+    }
+  });
+
+  // 监听按键松开
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowRight') {
+      if (isLongPressing) {
+        isLongPressing = false;
+        // 松手后，恢复到之前选中的倍数
+        applySpeed(currentTargetRate);
+        showToast(`已恢复 ${currentTargetRate}x`);
+      }
+    }
+  });
+
+  hoverListenerBound = true;
+}
+
+// 简单的屏幕中间提示 (Toast)，让用户知道长按生效了
+function showToast(text) {
+  const resultDiv = document.querySelector('.bpx-player-ctrl-playbackrate-result');
+  if (resultDiv) resultDiv.textContent = text;
+}
+
+// ... 以下是之前的 UI 逻辑 (injectMenu, snapToActive, observePlayer) ...
+
 function snapToActive(menuUl) {
   if (!menuUl) return;
-
   const activeItem = menuUl.querySelector('.bpx-state-active');
   if (!activeItem) return;
-
   const prevDisplay = menuUl.style.display;
   const prevVisibility = menuUl.style.visibility;
-
-  // 强制不可见渲染，计算高度
   menuUl.style.display = 'block';
   menuUl.style.visibility = 'hidden';
-
   const targetScroll = activeItem.offsetTop - (menuUl.clientHeight / 2) + (activeItem.clientHeight / 2);
   menuUl.scrollTop = targetScroll;
-
-  // 还原状态
   menuUl.style.display = prevDisplay;
   menuUl.style.visibility = prevVisibility;
 }
 
-/**
- * 【UI注入】生成倍数菜单
- */
 function injectMenu(rates) {
   const menuUl = document.querySelector('.bpx-player-ctrl-playbackrate-menu');
   if (!menuUl || menuUl.hasAttribute('data-pro-speed-injected')) return;
@@ -135,14 +185,14 @@ function injectMenu(rates) {
     li.dataset.value = rate;
     li.textContent = rate + 'x';
 
-    // 高亮判断
     if (currentTargetRate && Math.abs(currentTargetRate - rate) < 0.01) {
       li.classList.add('bpx-state-active');
     }
 
     li.addEventListener('click', (e) => {
       e.stopPropagation();
-      applySpeed(rate); // 调用核心应用函数
+      // 菜单点击，isTemporary = false，更新标准答案
+      applySpeed(rate, false);
 
       const resultDiv = document.querySelector('.bpx-player-ctrl-playbackrate-result');
       if (resultDiv) resultDiv.textContent = rate + 'x';
@@ -159,39 +209,28 @@ function injectMenu(rates) {
   menuUl.setAttribute('data-pro-speed-injected', 'true');
 }
 
-/**
- * 【事件委托】全局监听鼠标移入倍数区域
- */
 function setupGlobalHoverListener() {
   if (hoverListenerAttached) return;
-
   document.body.addEventListener('mouseenter', (e) => {
     const target = e.target;
     if (target && target.classList && target.classList.contains('bpx-player-ctrl-playbackrate')) {
       const menuUl = target.querySelector('.bpx-player-ctrl-playbackrate-menu');
-      if (menuUl) {
-        snapToActive(menuUl);
-      }
+      if (menuUl) snapToActive(menuUl);
     }
   }, true);
-
   hoverListenerAttached = true;
 }
 
-/**
- * 【观察者】处理B站动态DOM加载
- */
 function observePlayer(rates) {
   const observer = new MutationObserver(() => {
     const menu = document.querySelector('.bpx-player-ctrl-playbackrate-menu');
     const video = document.querySelector('video');
 
-    // 重新挂载防篡改
     if (video && !video.hasAttribute('data-pro-speed-guardian')) {
       setupAntiReset(video);
+      setupKeyboardListener(); // 确保 Video 重建后键盘监听依然有效
     }
 
-    // 重新注入菜单
     if (menu && !menu.hasAttribute('data-pro-speed-injected')) {
       injectMenu(rates);
       setupGlobalHoverListener();

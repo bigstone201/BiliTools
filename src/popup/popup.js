@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setting: document.getElementById('settingBtn'),
     title: document.getElementById('pageTitle')
   };
-
+  const longPressInput = document.getElementById('longPressInput');
   const input = document.getElementById('speedInput');
   const addBtn = document.getElementById('addBtn');
   const list = document.getElementById('speedList');
@@ -30,9 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const DEFAULT_RATES = [2.0, 1.5, 1.25, 1.0, 0.75, 0.5];
 
   // === 状态变量 ===
-  let currentSpeeds = [];
   let userSettings = {
-    enableChipmunk: true // 默认开启花栗鼠
+    enableChipmunk: true,
+    longPressSpeed: 3.0 // 默认值
   };
 
   init();
@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // 同步开关UI状态
       chipmunkToggle.checked = userSettings.enableChipmunk;
+      longPressInput.value = userSettings.longPressSpeed || 3.0; // 回显
 
       renderAll();
     });
@@ -178,6 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // === 设置保存逻辑 ===
   saveSettingBtn.addEventListener('click', () => {
     userSettings.enableChipmunk = chipmunkToggle.checked;
+
+    // 获取输入的数值，做简单的有效性检查
+    let lpSpeed = parseFloat(longPressInput.value);
+    if (!lpSpeed || lpSpeed <= 0) lpSpeed = 3.0; // 兜底
+    userSettings.longPressSpeed = lpSpeed;
+
     chrome.storage.sync.set({ settings: userSettings }, () => {
       showStatus('✅ 设置已保存');
       setTimeout(() => switchView('main'), 800);
