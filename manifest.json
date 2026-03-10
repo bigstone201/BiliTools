@@ -1,14 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Bilibili Pro Speed - B站超级倍速",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "zh_CN",
+
   "version": "1.0.0",
-  "description": "为B站播放器添加自定义倍数，支持高达4倍速播放。",
-  "permissions": [
-    "storage"
-  ],
-  "host_permissions": [
-    "*://*.bilibili.com/*"
-  ],
+  "permissions": ["storage"],
+  "host_permissions": ["*://*.bilibili.com/*"],
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
