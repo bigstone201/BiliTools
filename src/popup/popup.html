@@ -81,7 +81,7 @@
             <span class="tooltip-text">开启后，在视频画面上按住鼠标左键并左右拖拽，可像手机APP一样顺滑调节播放进度。</span>
           </div>
         </div>
-        <div class="setting-desc">按住左键左右滑动调节进度</div>
+        <div class="setting-desc">鼠标左键左右滑动调节进度</div>
       </div>
       <!-- 切换开关 -->
       <label class="switch">
@@ -90,8 +90,28 @@
       </label>
     </div>
 
-  </div>
+    <!-- 【新增】左键长按开关 -->
+    <div class="setting-item">
+      <div class="setting-info">
+        <div class="setting-label">鼠标左键长按画面加速</div>
+        <div class="setting-desc">按住视频画面左键触发加速 (与右键加速同速)</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="mouseLongPressToggle" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
 
+    <!-- 【新增】左键长按延迟设置 -->
+    <div class="setting-item">
+      <div class="setting-info">
+        <div class="setting-label">鼠标左键长按延迟 (毫秒)</div>
+        <div class="setting-desc">按下多久后判定为长按 (默认 500ms)</div>
+      </div>
+      <input type="number" id="mouseLongPressDelayInput" class="small-input" step="10" placeholder="60">
+    </div>
+
+  </div>
 </main>
 
 <footer>

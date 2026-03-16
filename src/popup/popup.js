@@ -27,7 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveSettingBtn = document.getElementById('saveSettingBtn');
   // 获取手势开关元素
   const gestureToggle = document.getElementById('gestureToggle');
-
+  // 【新增】获取新 DOM
+  const mouseLongPressToggle = document.getElementById('mouseLongPressToggle');
+  const mouseLongPressDelayInput = document.getElementById('mouseLongPressDelayInput');
   // === 配置常量 ===
   const QUICK_RATES = [2.0, 3.0, 4.0, 5.0];
   const DEFAULT_RATES = [2.0, 1.5, 1.25, 1.0, 0.75, 0.5];
@@ -37,7 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let userSettings = {
     enableChipmunk: true,
     longPressSpeed: 3.0,
-    enableGesture: true // 默认开启
+    enableGesture: true, // 默认开启
+    enableMouseLongPress: true,  // 默认开启左键长按
+    mouseLongPressDelay: 60      // 默认延迟 60 毫秒
   };
 
   init();
@@ -58,8 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // 同步开关UI状态
       chipmunkToggle.checked = userSettings.enableChipmunk;
       if (longPressInput) longPressInput.value = userSettings.longPressSpeed || 3.0;
-
       gestureToggle.checked = userSettings.enableGesture !== false;
+
+      // 【新增】同步新 UI 状态
+      if (mouseLongPressToggle) mouseLongPressToggle.checked = userSettings.enableMouseLongPress !== false;
+      if (mouseLongPressDelayInput) mouseLongPressDelayInput.value = userSettings.mouseLongPressDelay || 60;
 
       renderAll();
     });
@@ -73,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tab = tabs[0];
 
       // 检查 URL 是否包含 bilibili.com
-      // 注意：因为我们在 manifest 里配置了 host_permissions，所以我们可以访问 B站 的 URL
+      // 配置了 host_permissions，所以可以访问 B站 的 URL
       if (tab.url && tab.url.includes('bilibili.com')) {
         // 执行刷新
         chrome.tabs.reload(tab.id);
@@ -193,9 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 【修改】保存设置 -> 自动刷新
   saveSettingBtn.addEventListener('click', () => {
     userSettings.enableChipmunk = chipmunkToggle.checked;
-
-    // 【新增】读取手势开关状态
     userSettings.enableGesture = gestureToggle.checked;
+
+    // 【新增】读取长按设置
+    if (mouseLongPressToggle) userSettings.enableMouseLongPress = mouseLongPressToggle.checked;
+    if (mouseLongPressDelayInput) {
+      let delay = parseInt(mouseLongPressDelayInput.value);
+      if (isNaN(delay) || delay < 0) delay = 60;
+      userSettings.mouseLongPressDelay = delay;
+    }
 
     if (longPressInput) {
       let lpSpeed = parseFloat(longPressInput.value);
