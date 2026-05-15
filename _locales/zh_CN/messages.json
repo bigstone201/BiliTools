@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "BiliTools - B站增强 | 16倍速 & 沉浸体验",
+    "description": "插件名称"
+  },
+  "extensionDescription": {
+    "message": "解锁B站播放器限制，支持最高16倍速播放、花栗鼠音效优化、长按加速及自定义快捷键。完全免费，极简原生体验。",
+    "description": "插件描述"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "BiliTools - Bilibili 16x Speed & Enhancer",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Unlock up to 16x playback speed on Bilibili. Features include Chipmunk audio mode, long-press to speed up, and custom controls. Free & Native UI.",
+    "description": "Description of the extension"
+  }
+}
